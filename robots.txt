@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /corral
+Disallow: /staff
+Disallow: /wholesale
+Disallow: /api/
 
-Sitemap: https://example.com/sitemap.xml
+Sitemap: https://www.dansbootsale.com/sitemap.xml

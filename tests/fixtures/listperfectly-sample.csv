@@ -1,0 +1,24 @@
+Date,Title,Main Image,Image Gallery,UPC,Brand,Color,Size,Material,SKU,Price,Notes,Quantity,Description,eBay,Etsy,Poshmark,Mercari,Tradesy,Amazon,Grailed,Facebook,Depop,Kidizen,Shopify,Vestiaire,Whatnot,Vinted,Reverb,SOLD,Cost of Goods,Sold Price,Shipping Cost,Other Costs,Sold Date,Profit
+2024-01-02,Sample Brand Men's 9.5D Tan Cowboy Boots,https://media.listperfectly.com/fixture-a.jpg,https://media.listperfectly.com/fixture-b.jpg,,Sample Brand,Tan,8B,Caiman,SHOULD-NOT-SAVE,150,"Group Price: $99
+private note do not publish",1,"Color: Tan
+US Men's size: 9.5D
+==Honest Condition Report==
+Uppers: 8/10 Light creasing on the vamp
+Measurements (approx.):
+Sole widest part: 4.4 in
+Shaft Height: 12 in
+Shoe trees are display only",https://ebay.example/not-a-photo,,,,,,,,,,,,SECRET-COST,SECRET-SOLD,,SECRET-OTHER,,SECRET-PROFIT
+2024-01-03,Plain Title Cowboy Boots,https://media.listperfectly.com/fixture-c.jpg,,,Plain Brand,,10D,Leather,SKU-2,220,Group price: 999,1,"A short public description of a sample pair that is long enough to stand alone as the about text for tests.",,,,,,,,,,,,,,
+2024-01-04,Another Sample Mens Boots,https://media.listperfectly.com/fixture-d.jpg,,,Another Brand,,,Goat,SKU-3,80,Group price $99 reduced 9/9/99,1,"US Men's size: 9.5 D
+bin #4E
+boots#6B
+Width is not in the title on purpose.",,,,,,,,,,,,,,
+2024-01-05,Word Width Sample Boots,https://media.listperfectly.com/fixture-e.jpg,,,Word Brand,,10,Leather,SKU-4,140,,1,"Size: Mens 10
+Width: Wide
+Sole widest part: 4.25 in",,,,,,,,,,,,,,
+2024-01-06,LVIDRAFT template do not import,https://media.listperfectly.com/fixture-f.jpg,,,Draft Brand,,9D,Leather,SKU-5,10,Group Price: $5,1,Template row,,,,,,,,,,,,,,
+2024-01-07,Already Sold Sample Boots,https://media.listperfectly.com/fixture-g.jpg,,,Sold Brand,Black,11 EE,Ostrich,SKU-6,300,Group Price: $150,1,Public description of a sold sample.,,,,,,,,,,,,,SOLD,40,300,12,0,2024-02-01,100
+2024-01-08,Zero Qty Sample Boots,https://media.listperfectly.com/fixture-h.jpg,,,Zero Brand,,7B,Suede,SKU-7,90,,0,Public description.,,,,,,,,,,,,,No,20,,,,,
+2024-01-09,EW Width Sample Mens 9 EW Boots,https://media.listperfectly.com/fixture-i.jpg,,,EW Brand,,8C,Leather,SKU-8,175,,1,"Size: 8C
+This description mentions bin #4E and boots#6B which are shelf codes.",,,,,,,,,,,,,,
+2024-01-10,Half Size 11.5 2E Sample Boots,https://media.listperfectly.com/fixture-j.jpg,,,Half Brand,,,Python,SKU-9,410,Group Price: $200,1,No labeled size here. The title carries 11.5 2E.,,,,,,,,,,,,,,
