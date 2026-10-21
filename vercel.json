@@ -1,11 +1,41 @@
 {
-  "redirects": [
-    { "source": "/eBayBootSearch", "destination": "/boot-search", "statusCode": 301 },
-    { "source": "/eBayBootSearch/", "destination": "/boot-search", "statusCode": 301 },
-    { "source": "/eBayBootSearch/index.html", "destination": "/boot-search", "statusCode": 301 },
-    { "source": "/eBayBootSearch/assets/:path*", "destination": "/boot-search", "statusCode": 301 }
-  ],
   "rewrites": [
-    { "source": "/boot-search", "destination": "/eBayBootSearch/index.html" }
-  ]
+    { "source": "/boot/:slug", "destination": "/api/boot?slug=:slug" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/img", "destination": "/api/img" },
+    { "source": "/boot-search", "destination": "/eBayBootSearch/index.html" },
+    { "source": "/boot-search/:path*", "destination": "/eBayBootSearch/:path*" },
+    { "source": "/eBayBootSearch", "destination": "/boot-search" },
+    { "source": "/eBayBootSearch/", "destination": "/boot-search" },
+    { "source": "/how", "destination": "/index.html" },
+    { "source": "/privacy", "destination": "/index.html" },
+    { "source": "/corral", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/wholesale", "destination": "/index.html" },
+    { "source": "/staff", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; img-src 'self' data: blob: https://media.listperfectly.com https://*.supabase.co; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; font-src 'self'; connect-src 'self' https://*.supabase.co https://cdn.jsdelivr.net; frame-ancestors 'self'; base-uri 'self'; form-action 'self'" }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/fonts/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ],
+  "functions": {
+    "api/boot.js": { "includeFiles": "index.html" }
+  }
 }

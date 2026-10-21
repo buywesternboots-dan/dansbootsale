@@ -1,0 +1,5 @@
+Rye is licensed under the SIL Open Font License. See OFL-Rye.txt.
+Inter and Zilla Slab are licensed under the SIL Open Font License 1.1.
+Copyright 2020 The Inter Project Authors. https://github.com/rsms/inter
+Copyright 2013 The Zilla Slab Project Authors. https://github.com/mozilla/zilla-slab
+Font files are the latin subsets from Fontsource.

@@ -1,0 +1,35 @@
+.portal{padding:20px 0 64px}
+.portal h1{font-family:var(--slab);font-size:clamp(28px,4vw,36px);margin:0 0 6px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+.tabs button{min-height:44px}
+.banner{background:#fff4e4;border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;margin:0 0 14px}
+.table-scroll{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table.gridish{width:100%;border-collapse:collapse;font-size:14px;min-width:720px}
+table.gridish th,table.gridish td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.gridish th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.row{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row img{width:72px;height:72px;object-fit:cover;border-radius:8px;background:#f1ece4}
+.row h3{margin:0;font-size:16px}
+.meta{color:var(--ink-2);font-size:13px}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.form{display:grid;gap:10px;max-width:720px}
+.form label{display:grid;gap:4px;font-weight:650;font-size:14px}
+.form input,.form textarea,.form select{width:100%;min-height:44px;border:1.5px solid var(--line-2);border-radius:10px;padding:8px 10px;background:#fff}
+.form textarea{min-height:120px}
+.form .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.form .row2{grid-template-columns:1fr}}
+.photos{display:flex;gap:8px;flex-wrap:wrap}
+.photos img{width:72px;height:72px;object-fit:cover;border-radius:8px}
+.warn{color:var(--sold);font-weight:700}
+.btn-danger{background:#7a2e22;color:#fff;border-color:#7a2e22}
+.receipt{background:#fff;border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.receipt h2{margin:0 0 8px}
+.line{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.line img{width:56px;height:56px;object-fit:cover;border-radius:8px}
+.choice{display:grid;gap:10px;max-width:420px}
+.ws-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.ws-card{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.ws-card img{width:100%;aspect-ratio:1;object-fit:cover;background:#f1ece4}
+.ws-card div{padding:10px 12px 14px}
+.ws-price{font-weight:800;font-size:22px}
+.ws-retail{color:var(--ink-3);font-size:13px;text-decoration:line-through}
