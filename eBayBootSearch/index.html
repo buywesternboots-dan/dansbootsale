@@ -1,13 +1,136 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Advanced Boot Search Tool for eBay - Dan's Boot Sale</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module" crossorigin src="/eBayBootSearch/assets/index-D_eJKNCG.js"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--brand:start (generated from config.js by scripts/build-banner.js; edit config.js, not this block) -->
+<title>Dusty's Boot Finder – Searches live eBay listings | Dan's Boot Sale</title>
+<meta name="description" content="Dusty's Boot Finder: build a detailed search for western boots by size, width, 190+ makers, condition and price. Searches live eBay listings; results open on eBay. Not affiliated with or endorsed by eBay.">
+<link rel="canonical" href="https://www.dansbootsale.com/boot-search">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Dan's Boot Sale">
+<meta property="og:url" content="https://www.dansbootsale.com/boot-search">
+<meta property="og:title" content="Dusty's Boot Finder">
+<meta property="og:description" content="Searches live eBay listings. Find western boots by size, width, maker and more.">
+<meta property="og:image" content="https://www.dansbootsale.com/eBayBootSearch/img/og.jpg">
+<meta property="og:image:alt" content="Dusty's Boot Finder sign. Boot search form for eBay listings.">
+<meta name="twitter:card" content="summary_large_image">
+<!--brand:end-->
+<meta name="theme-color" content="#241c15">
+<link rel="icon" href="/img/horseshoe.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="/eBayBootSearch/fonts/Sancreek.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="/eBayBootSearch/fonts/Rye.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="/eBayBootSearch/bootsearch.css">
+<!-- Load order matters: settings, then data, then the URL builder, then the page. No build step. -->
+<script src="/eBayBootSearch/config.js"></script>
+<script src="/eBayBootSearch/js/data.js"></script>
+<script src="/eBayBootSearch/js/url-builder.js"></script>
+<script src="/eBayBootSearch/js/app.js" defer></script>
+</head>
+<body>
+<nav class="bs-top" aria-label="Main">
+  <a href="/">&larr; Dan's Boot Sale</a>
+</nav>
+<header class="bs-hero">
+  <!-- Sign banner: plain HTML/CSS. The words come from config.js (toolName) via js/brand.js. -->
+  <div class="sign" id="sign" role="img" aria-label="Dusty's Boot Finder (sign)">
+    <div class="sign-top" id="signTopRow" aria-hidden="true"><i class="flour"></i><span id="signTop">Dusty's</span><i class="flour r"></i></div>
+    <div class="sign-main" id="signMain" aria-hidden="true">Boot Finder</div>
+    <div class="sign-bot" aria-hidden="true"><i class="star">&#9733;</i><i class="rule"></i><i class="star">&#9733;</i></div>
+  </div>
+</header>
+<div class="bs-titlebar">
+  <h1 class="sr-only" id="toolName">Dusty's Boot Finder</h1>
+  <p class="bs-sub" id="toolSub">Searches live eBay listings</p>
+</div>
+<script src="/eBayBootSearch/js/brand.js"></script>
+
+<main class="bs-wrap" id="app" aria-label="Boot search form for eBay listings">
+  <noscript><p class="bs-card">This search tool needs JavaScript turned on.</p></noscript>
+
+  <div class="bs-bar">
+    <div class="bs-bar-group" role="group" aria-labelledby="lblView">
+      <span class="bs-label" id="lblView">Display Search Results:</span>
+      <button type="button" class="pill" data-view="web">Browser</button>
+      <button type="button" class="pill" data-view="mobile">Mobile site</button>
+      <span class="bs-hint">(browser is recommended)</span>
+    </div>
+    <div class="bs-bar-group bs-region">
+      <label class="bs-label" for="region">eBay Region:</label>
+      <select id="region"></select>
+    </div>
+  </div>
+
+  <section class="bs-card" aria-labelledby="kwTitle">
+    <div class="bs-card-head">
+      <h2 id="kwTitle">Search Keywords <button type="button" class="clear" data-clear="keywords">Clear all</button></h2>
+      <div class="bs-tip">
+        <p>eBay searches titles and item specifics by default</p>
+        <label class="check bold" id="descWrap"><input type="checkbox" id="desc"> Also search in item descriptions</label>
+      </div>
+    </div>
+    <div class="field">
+      <label for="any"><b>ANY</b> of these words</label>
+      <input type="text" id="any" placeholder="e.g., Lucchese Justin Roper" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="all"><b>ALL</b> of these words</label>
+      <div class="field-row">
+        <input type="text" id="all" placeholder="e.g., vintage cowboy" autocomplete="off">
+        <select id="allMode" aria-label="Word order">
+          <option value="any_order">Any order</option>
+          <option value="exact_order">Exact order</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="not"><b>EXCLUDE</b> these words</label>
+      <input type="text" id="not" placeholder="e.g., damaged worn" autocomplete="off">
+    </div>
+  </section>
+
+  <label class="check cat">
+    <input type="checkbox" id="useCat">
+    <span>Use Clothing &gt; Shoes &gt; Boots category <em>(unlocks boot-specific filters)</em></span>
+  </label>
+  <p class="bs-warn" id="catOffNote" hidden>Boot category is off, so this searches all of eBay and your size, width, brand, color, handmade and country picks are not applied.</p>
+
+  <div class="bs-menu">
+    <button type="button" class="menu primary" data-open="boot_filters" id="btnBoot"><span>Boot Filters</span><i class="count"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button type="button" class="menu primary" data-open="brands" id="btnBrands"><span>Brands</span><i class="count"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button type="button" class="menu" data-open="standard_filters" id="btnSettings"><span>Search Settings</span><i class="count"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button type="button" class="menu" data-open="advanced" id="btnMore"><span>More Options</span><i class="count"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+
+  <p class="bs-summary" id="summary" aria-live="polite"></p>
+
+  <label class="check save"><input type="checkbox" id="save" checked> Save these search settings for my next visit</label>
+
+  <div class="bs-disclosure" id="disclosure" role="note" aria-label="Advertising disclosure" hidden></div>
+
+  <button type="button" class="go" id="go">Find My Boots →</button>
+  <p class="bs-after" id="after"></p>
+
+  <div class="bs-tools">
+    <button type="button" class="linkbtn" id="share">Copy link to this search</button>
+    <button type="button" class="linkbtn" id="reset">Reset everything</button>
+    <details id="preview"><summary>Show the eBay link</summary><code id="previewUrl"></code></details>
+  </div>
+  <p class="bs-toast" id="toast" role="status" aria-live="polite"></p>
+</main>
+
+<div class="modal-back" id="modal" hidden>
+  <div class="modal" tabindex="-1" id="modalBox" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <h3 id="modalTitle"></h3>
+      <button type="button" class="x" id="modalX" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot"><button type="button" class="done" id="modalDone">Done</button></div>
+  </div>
+</div>
+</body>
 </html>

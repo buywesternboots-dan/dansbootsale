@@ -1,0 +1,11 @@
+{
+  "redirects": [
+    { "source": "/eBayBootSearch", "destination": "/boot-search", "statusCode": 301 },
+    { "source": "/eBayBootSearch/", "destination": "/boot-search", "statusCode": 301 },
+    { "source": "/eBayBootSearch/index.html", "destination": "/boot-search", "statusCode": 301 },
+    { "source": "/eBayBootSearch/assets/:path*", "destination": "/boot-search", "statusCode": 301 }
+  ],
+  "rewrites": [
+    { "source": "/boot-search", "destination": "/eBayBootSearch/index.html" }
+  ]
+}
