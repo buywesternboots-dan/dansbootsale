@@ -127,23 +127,41 @@
     return { min: min, max: max, swapped: swapped };
   }
 
+  // The affiliate profile in use: the one the server names (status.profile), else config.activeProfile.
+  function activeProfile(config) {
+    var aff = (config && config.affiliate) || {};
+    var name = aff.serverProfile && aff.profiles && aff.profiles[aff.serverProfile] ? aff.serverProfile : aff.activeProfile;
+    return (aff.profiles && aff.profiles[name]) || null;
+  }
+  // Disclosure wording for the active profile (names the EPN account holder).
+  function disclosureText(config) {
+    var p = activeProfile(config);
+    return (p && p.disclosure) || '';
+  }
+
   // Decide whether EPN params apply, and why not when they don't.
+  // ONE switch, on the server: paid links only when the page has been told affiliate: true by
+  // /api/boots?status=1 (aff.serverOn, set at runtime by results.js). Nothing in config.js can turn
+  // paid links on by itself, so a paid link can never appear without the disclosure.
   function affiliateDecision(s, config) {
     var aff = (config && config.affiliate) || {};
-    if (aff.enabled !== true) return { paid: false, reason: 'affiliate switch is off' };
-    var profile = aff.profiles && aff.profiles[aff.activeProfile];
+    if (aff.serverOn !== true) return { paid: false, reason: 'affiliate tracking is off on the server' };
+    var profile = activeProfile(config);
     if (!profile) return { paid: false, reason: 'no active affiliate profile' };
+    if (!disclosureText(config)) return { paid: false, reason: 'profile has no disclosure text' };
     var campid = s.interface_type === 'mobile' ? profile.campaigns.mobile : profile.campaigns.web;
     // EPN campaign IDs are 10 digits. Anything else (e.g. "<WBW_CAMPID>") is a placeholder: never send it.
     if (!/^\d{10}$/.test(String(campid || ''))) return { paid: false, reason: 'campaign ID is a placeholder' };
     if (!DATA.EPN_ROTATION[s.region]) return { paid: false, reason: 'no EPN program for ' + s.region };
     if (s.availability === 'sold') return { paid: false, reason: 'sold searches are never affiliate links' };
+    // customid is a placement label only (letters, digits, - and _), never anything about the shopper.
+    var label = String(profile.customidPrefix || 'bootsearch').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || 'bootsearch';
     return {
       paid: true, reason: 'affiliate on',
       params: [
         ['mkcid', '1'], ['mkrid', DATA.EPN_ROTATION[s.region]], ['siteid', DATA.EBAY_SITE_ID[s.region] || '0'],
         ['campid', String(campid)],
-        ['customid', profile.customidPrefix + '-' + (s.interface_type === 'mobile' ? 'mobile' : 'web')],
+        ['customid', label + '-' + (s.interface_type === 'mobile' ? 'mobile' : 'web')],
         ['toolid', aff.toolid || '10001'], ['mkevt', '1']
       ]
     };
@@ -292,7 +310,7 @@
   }
 
   var API = { defaultState: defaultState, normalizeState: normalizeState, buildKeywords: buildKeywords,
-    affiliateDecision: affiliateDecision, buildSearch: buildSearch, stateFromQuery: stateFromQuery,
+    affiliateDecision: affiliateDecision, activeProfile: activeProfile, disclosureText: disclosureText, buildSearch: buildSearch, stateFromQuery: stateFromQuery,
     shareQuery: shareQuery, hasShareParams: hasShareParams, SHARE_FLAGS: SHARE_FLAGS,
     cleanPrice: cleanPrice, priceRange: priceRange, cleanZip: cleanZip, zipValid: zipValid };
   if (typeof module === 'object' && module.exports) module.exports = API;
