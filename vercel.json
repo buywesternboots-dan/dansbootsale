@@ -1,4 +1,12 @@
 {
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "functions": {
+    "api/boots.js": {
+      "includeFiles": "{api/_lib/**,eBayBootSearch/js/data.js,eBayBootSearch/js/url-builder.js}",
+      "maxDuration": 15
+    }
+  },
   "redirects": [
     { "source": "/eBayBootSearch", "destination": "/boot-search", "statusCode": 301 },
     { "source": "/eBayBootSearch/", "destination": "/boot-search", "statusCode": 301 },
@@ -6,6 +14,27 @@
     { "source": "/eBayBootSearch/assets/:path*", "destination": "/boot-search", "statusCode": 301 }
   ],
   "rewrites": [
-    { "source": "/boot-search", "destination": "/eBayBootSearch/index.html" }
+    { "source": "/boot-search", "destination": "/eBayBootSearch/index.html" },
+    { "source": "/boot-search/privacy", "destination": "/eBayBootSearch/privacy.html" },
+    { "source": "/contact", "destination": "/index.html" },
+    { "source": "/corral", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/staff", "destination": "/index.html" },
+    { "source": "/wholesale", "destination": "/index.html" },
+    { "source": "/wholesale/:path*", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/boot-search",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/boot-search/(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    }
   ]
 }

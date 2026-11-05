@@ -2,6 +2,8 @@
  * Boot Search page logic (vanilla JS, no framework, no build step).
  * Reads settings from config.js, option lists from data.js, and builds links with url-builder.js.
  * Nothing here talks to eBay: the finished search URL simply opens in a new tab.
+ * Live results (js/results.js) plug in through window.DustyApp: when /api/boots is set up,
+ * "Find My Boots" shows result cards on the page instead; otherwise it opens eBay as before.
  */
 (function () {
   'use strict';
@@ -10,9 +12,29 @@
   var U = window.BootSearchURL;
   var $ = function (id) { return document.getElementById(id); };
 
+  /* ---------- the ONE affiliate switch (server-side) ----------
+   * Paid links need the server's word: /api/boots?status=1 -> { affiliate: true }. results.js passes
+   * that in through DustyApp.setServer(). Until then (and on static hosts) links are clean.
+   * Anything config.js might say is ignored: serverOn/serverProfile are wiped here at load. */
+  var SERVER = { affiliate: false, profile: null };
+  if (CFG.affiliate) { delete CFG.affiliate.serverOn; delete CFG.affiliate.serverProfile; delete CFG.affiliate.enabled; }
+  function linkConfig() {
+    var aff = Object.assign({}, CFG.affiliate || {}, { serverOn: SERVER.affiliate === true, serverProfile: SERVER.profile || null });
+    return Object.assign({}, CFG, { affiliate: aff });
+  }
+
   /* ---------- state ---------- */
+  // Saved form settings. Older builds used "ebay_boot_prefs": moved to CFG.storageKey once, then deleted.
+  var LEGACY_PREFS_KEY = 'ebay_boot_prefs';
   function loadSaved() {
-    try { var raw = localStorage.getItem(CFG.storageKey); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+    try {
+      var raw = localStorage.getItem(CFG.storageKey), old = localStorage.getItem(LEGACY_PREFS_KEY);
+      if (old !== null) {
+        if (raw === null) { raw = old; localStorage.setItem(CFG.storageKey, old); }
+        localStorage.removeItem(LEGACY_PREFS_KEY);
+      }
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
   }
   // A shared link (?brand=Lucchese&size=10) wins over saved settings so it opens exactly as sent.
   var fromLink = U.hasShareParams(location.search);
@@ -87,24 +109,31 @@
     $('descWrap').hidden = S.interface_type !== 'web';
     $('summary').textContent = summaryText();
 
-    var built = U.buildSearch(S, CFG);
+    var built = U.buildSearch(S, linkConfig());
     $('previewUrl').textContent = built.url;
+    // "Find My Boots" is a real link to the built search; "sponsored" only when it is paid.
+    var go = $('go');
+    go.href = built.url;
+    go.rel = (built.paid ? 'sponsored ' : '') + 'noopener noreferrer';
     // Opened from a shared link: keep the address bar matching the current picks, so a reload or
     // re-share gives what is on screen (not the original link).
-    if (fromLink) { var q = U.shareQuery(S); history.replaceState(null, '', location.pathname + (q ? '?' + q : '')); }
+    if (fromLink) { var q = withRefine(U.shareQuery(S)); history.replaceState(null, '', location.pathname + (q ? '?' + q : '')); }
 
-    // Disclosure: only claim paid links when the affiliate switch is actually on.
+    // Disclosure: only claim paid links when the server's affiliate switch is actually on.
     var aff = CFG.affiliate || {};
     var box = $('disclosure');
-    if (aff.enabled === true) {
+    if (SERVER.affiliate === true && U.disclosureText(linkConfig())) {
       box.hidden = false;
-      box.innerHTML = '<p class="d1">' + esc(aff.disclosure) + '</p><p class="d2">' + esc(CFG.nonEndorsement) + '</p>' +
+      box.innerHTML = '<p class="d1">' + esc(U.disclosureText(linkConfig())) + '</p><p class="d2">' + esc(CFG.nonEndorsement) + '</p>' +
         (aff.disclosurePageUrl ? '<a href="' + esc(aff.disclosurePageUrl) + '">Affiliate disclosure</a>' : '');
       $('after').textContent = built.paid ? 'Paid link · Results open on eBay in a new tab.'
         : 'Results open on eBay in a new tab. This search is not a paid link.';
     } else {
       box.hidden = true; box.innerHTML = '';
       $('after').textContent = CFG.nonEndorsement + ' Results open on eBay in a new tab.';
+    }
+    if (window.DustyLive && window.DustyLive.canShow(S)) {
+      $('after').textContent = CFG.nonEndorsement + ' Live results show below; each listing opens on eBay in a new tab.';
     }
   }
 
@@ -115,10 +144,13 @@
     } catch (e) { /* private mode etc. */ }
   }
 
-  function search() {
+  // Click on the "Find My Boots" link. With live results the cards show here instead (default
+  // prevented); otherwise the browser follows the link to eBay in a new tab. One search, one tab.
+  function search(e) {
     save();
-    var built = U.buildSearch(S, CFG);
-    window.open(built.url, '_blank', 'noopener');   // one search, one tab
+    refresh();
+    var live = window.DustyLive;
+    if (live && live.canShow(S)) { if (e) e.preventDefault(); live.run(0); }
   }
 
   function toast(msg) {
@@ -126,8 +158,19 @@
     clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 2600);
   }
 
+  // Live-results picks (r_size=…, western=0) ride along in shared links. Before results.js has
+  // loaded, keep whatever the address bar already had so a shared link is not stripped.
+  function withRefine(q) {
+    var extra = window.DustyLive ? window.DustyLive.refineQuery() : (function () {
+      var p = new URLSearchParams(location.search), out = new URLSearchParams();
+      p.forEach(function (v, k) { if (/^r_[a-z]+$/.test(k) || k === 'western') out.set(k, v); });
+      return out.toString();
+    })();
+    return [q, extra].filter(Boolean).join('&');
+  }
+
   function shareLink() {
-    var q = U.shareQuery(S);
+    var q = withRefine(U.shareQuery(S));
     var link = location.origin + (CFG.shareUrl || location.pathname) + (q ? '?' + q : '');   // always the preferred /boot-search address
     var done = function () { toast('Link copied. Anyone who opens it gets this exact search.'); };
     if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(link).then(done, function () { prompt('Copy this link:', link); });
@@ -308,7 +351,7 @@
     $('region').addEventListener('change', function (e) { S.region = e.target.value; refresh(); });
     [['any', 'any_keywords'], ['all', 'all_keywords'], ['not', 'exclude_keywords']].forEach(function (p) {
       $(p[0]).addEventListener('input', function (e) { S[p[1]] = e.target.value; refresh(); });
-      $(p[0]).addEventListener('keydown', function (e) { if (e.key === 'Enter') search(); });
+      $(p[0]).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('go').click(); } });
     });
     $('allMode').addEventListener('change', function (e) { S.all_keywords_mode = e.target.value; refresh(); });
     $('desc').addEventListener('change', function (e) { S.search_description = e.target.checked; refresh(); });
@@ -386,6 +429,17 @@
     });
     body.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.id === 'brandSearch') e.preventDefault(); });
   }
+
+  // Hooks for js/results.js (live results). S is reassigned on reset, so always read it through get().
+  window.DustyApp = {
+    get: function () { return S; },
+    set: function (next) { S = U.normalizeState(next); fromLink = false; syncForm(); },
+    update: function (fn) { fn(S); S = U.normalizeState(S); syncForm(); save(); },
+    refresh: refresh, summary: summaryText, esc: esc, toast: toast,
+    linkConfig: linkConfig,
+    setServer: function (j) { SERVER = { affiliate: !!(j && j.affiliate === true), profile: j && typeof j.profile === 'string' ? j.profile : null }; refresh(); },
+    server: function () { return { affiliate: SERVER.affiliate, profile: SERVER.profile }; }
+  };
 
   fillStatic();
   bind();

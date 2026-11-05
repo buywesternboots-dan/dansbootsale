@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
 <!--brand:start (generated from config.js by scripts/build-banner.js; edit config.js, not this block) -->
 <title>Dusty's Boot Finder – Searches live eBay listings | Dan's Boot Sale</title>
 <meta name="description" content="Dusty's Boot Finder: build a detailed search for western boots by size, width, 190+ makers, condition and price. Searches live eBay listings; results open on eBay. Not affiliated with or endorsed by eBay.">
@@ -29,10 +30,14 @@
 <script src="/eBayBootSearch/js/data.js"></script>
 <script src="/eBayBootSearch/js/url-builder.js"></script>
 <script src="/eBayBootSearch/js/app.js" defer></script>
+<script src="/eBayBootSearch/js/shopper.js" defer></script>
+<script src="/eBayBootSearch/js/store.js" defer></script>
+<script src="/eBayBootSearch/js/results.js" defer></script>
 </head>
 <body>
 <nav class="bs-top" aria-label="Main">
   <a href="/">&larr; Dan's Boot Sale</a>
+  <a href="/contact">Contact</a>
 </nav>
 <header class="bs-hero">
   <!-- Sign banner: plain HTML/CSS. The words come from config.js (toolName) via js/brand.js. -->
@@ -50,6 +55,36 @@
 
 <main class="bs-wrap" id="app" aria-label="Boot search form for eBay listings">
   <noscript><p class="bs-card">This search tool needs JavaScript turned on.</p></noscript>
+
+  <!-- My Boots (js/results.js + js/store.js): the shopper's saved searches and activity, on this device only. -->
+  <section class="mb" id="myBoots" aria-labelledby="mbTitle" hidden>
+    <div class="mb-head">
+      <h2 id="mbTitle">My Boots</h2>
+      <span class="badge new" id="mbNew" hidden></span>
+      <button type="button" class="linkbtn mb-toggle" id="mbToggle" aria-controls="mbBody" aria-expanded="false">Open</button>
+    </div>
+    <button type="button" class="go mb-runall" id="runAll" hidden>Run all my searches</button>
+    <div class="bs-disclosure mb-disclosure" id="mbDisclosure" role="note" aria-label="Advertising disclosure" hidden></div>
+    <p class="mb-sub" id="mbSub"></p>
+    <div class="mb-body" id="mbBody" hidden>
+      <h3 class="mb-h">Saved searches</h3>
+      <ul class="mb-list" id="mbSearches"></ul>
+      <div id="mbRunsWrap" hidden>
+        <h3 class="mb-h">Recent searches</h3>
+        <ul class="mb-recent" id="mbRuns"></ul>
+      </div>
+      <div class="mb-links" role="group" aria-label="My lists">
+        <button type="button" class="pill" data-tab="picks">♥ Picks (<span id="mbPicksN">0</span>)</button>
+        <button type="button" class="pill" data-tab="viewed">Viewed (<span id="mbViewedN">0</span>)</button>
+        <button type="button" class="pill" data-tab="hidden">Hidden (<span id="mbHiddenN">0</span>)</button>
+      </div>
+      <p class="mb-privacy">Kept on this device only. No account, nothing sent to us, no emails or texts.
+        ♥ Picks and hidden listings drop off after 6 hours.
+        <button type="button" class="linkbtn" id="mbExport">Download my data</button> ·
+        <button type="button" class="linkbtn mb-clear" id="clearData">Clear my data</button> ·
+        <a href="/boot-search/privacy">Privacy</a></p>
+    </div>
+  </section>
 
   <div class="bs-bar">
     <div class="bs-bar-group" role="group" aria-labelledby="lblView">
@@ -111,7 +146,7 @@
 
   <div class="bs-disclosure" id="disclosure" role="note" aria-label="Advertising disclosure" hidden></div>
 
-  <button type="button" class="go" id="go">Find My Boots →</button>
+  <a class="go" id="go" href="https://www.ebay.com/sch/i.html" target="_blank" rel="noopener noreferrer">Find My Boots →</a>
   <p class="bs-after" id="after"></p>
 
   <div class="bs-tools">
@@ -120,6 +155,66 @@
     <details id="preview"><summary>Show the eBay link</summary><code id="previewUrl"></code></details>
   </div>
   <p class="bs-toast" id="toast" role="status" aria-live="polite"></p>
+
+  <!-- Live results (js/results.js). Link-out only: cards open the real listing on eBay in a new tab. -->
+  <section class="bs-results" id="results" aria-labelledby="resTitle" hidden>
+    <div class="res-head">
+      <h2 id="resTitle">Results</h2>
+      <!-- Disclosure sits right under the title, above "Open this search on eBay", so it is on screen on
+           phones. Shown only when the server says a shown link is paid (EPN on server-side). -->
+      <div class="bs-disclosure res-disclosure" id="resDisclosure" role="note" aria-label="Advertising disclosure" hidden></div>
+      <p class="res-asof" id="resAsOf" aria-live="polite"></p>
+      <div class="res-actions">
+        <a class="linkbtn" id="resOpen" href="#" target="_blank" rel="noopener noreferrer">Open this search on eBay ↗</a>
+        <button type="button" class="linkbtn res-save" id="resSave">♡ Save this search</button>
+      </div>
+    </div>
+    <div class="res-tabs" role="tablist" aria-label="Which listings">
+      <button type="button" class="tab" role="tab" id="tabResults" data-tab="results" aria-selected="true">Results</button>
+      <button type="button" class="tab" role="tab" id="tabAll" data-tab="all" aria-selected="false" hidden>All my searches</button>
+      <button type="button" class="tab" role="tab" data-tab="picks" aria-selected="false">♥ Picks (<span id="picksN">0</span>)</button>
+      <button type="button" class="tab" role="tab" data-tab="viewed" aria-selected="false">Viewed (<span id="viewedN">0</span>)</button>
+      <button type="button" class="tab" role="tab" data-tab="hidden" aria-selected="false">Hidden (<span id="hiddenN">0</span>)</button>
+    </div>
+    <div class="res-modes" id="resModes" role="group" aria-label="Sale type">
+      <button type="button" class="pill" data-mode="all">All</button>
+      <button type="button" class="pill" data-mode="auction">Auctions ending soonest</button>
+      <button type="button" class="pill" data-mode="bin">Buy It Now</button>
+      <label class="check res-western"><input type="checkbox" id="resWestern" checked> Western styles only</label>
+    </div>
+    <div class="res-toolbar" id="resToolbar">
+      <label class="res-sort"><span>Sort</span>
+        <select id="resSort">
+          <option value="bestMatch">Best match</option>
+          <option value="endingSoonest">Ending soonest</option>
+          <option value="newlyListed">Newly listed</option>
+          <option value="priceLowToHigh">Price + shipping: lowest first</option>
+          <option value="priceHighToLow">Price + shipping: highest first</option>
+          <option value="mostBids">Most bids (this page)</option>
+          <option value="distance" id="sortDistance" hidden>Distance (this page)</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="hideSeen"> Hide listings I’ve seen</label>
+      <div class="res-layout" role="group" aria-label="Layout">
+        <button type="button" class="pill" data-layout="grid" aria-label="Grid view">▦ Grid</button>
+        <button type="button" class="pill" data-layout="list" aria-label="List view">☰ List</button>
+      </div>
+      <button type="button" class="pill res-filters-btn" id="resFiltersBtn" aria-controls="resFacets" aria-expanded="false">Filters</button>
+    </div>
+    <div class="res-facets" id="resFacets"></div>
+    <div class="res-undo" id="resUndo" role="status" hidden><span id="resUndoText">Listing hidden.</span> <button type="button" class="linkbtn" id="resUndoBtn">Undo</button></div>
+    <p class="res-msg" id="resMsg" hidden></p>
+    <ol class="res-grid" id="resList"></ol>
+    <p class="res-hiddennote" id="resHiddenNote" hidden></p>
+    <nav class="res-pager" id="resPager" aria-label="Result pages" hidden>
+      <button type="button" class="pill" id="resPrev">← Previous</button>
+      <span id="resPage"></span>
+      <button type="button" class="pill" id="resNext">Next →</button>
+    </nav>
+    <p class="res-foot" id="resFoot"></p>
+    <p class="res-privacy">My Boots (saved searches, ♥ picks, seen and hidden) is kept on this device only: no account, nothing sent to us.
+      <button type="button" class="linkbtn" id="clearData2">Clear my data</button> · <a href="/boot-search/privacy">Privacy</a></p>
+  </section>
 </main>
 
 <div class="modal-back" id="modal" hidden>

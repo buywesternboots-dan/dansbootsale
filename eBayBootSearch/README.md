@@ -1,8 +1,7 @@
 # Dusty's Boot Finder (`/boot-search`)
 
-Public address: **`/boot-search`** (served directly). The folder keeps its old name for the
-files; old links to `/eBayBootSearch`, `/eBayBootSearch/` and `/eBayBootSearch/index.html`
-301-redirect to `/boot-search` (query string kept), see `vercel.json`.
+Public address: **`/boot-search`** (served directly). The folder keeps its old name, so
+`/eBayBootSearch` still works for old links.
 
 **Tool name**: one line in `config.js` (`toolName`, plus `toolSubtitle`). EPN rule: the name must
 not contain "eBay". The sign banner is HTML/CSS and picks the name up automatically (`js/brand.js`);
@@ -10,18 +9,31 @@ after a rename also run `node scripts/build-banner.js` to refresh the `<title>`/
 link-preview image `img/og.jpg` (link previews don't run JavaScript).
 
 A search builder for western boots on eBay. The visitor picks keywords, sizes, widths,
-brands, condition, price and so on; the tool builds one eBay search URL and opens it in a
-new tab. **It never calls eBay itself** (no API, no keys, no server code).
+brands, condition, price and so on. Two ways it shows results:
+
+- **Live results (when set up):** "Find My Boots" asks our own function `/api/boots`, which
+  calls eBay's Browse API server-side and returns result cards on the page (see
+  [Live results](#live-results-apiboots) below). The browser never calls eBay or sees a key.
+- **Link builder (always available, and the fallback):** the tool builds one eBay search URL
+  and opens it in a new tab. Used when no keys are set, for non-US regions, for Sold searches,
+  and whenever the API errors or is over the daily budget.
 
 Rebuilt Oct 2026 as plain, readable code. It replaces a minified React bundle that had
-no source (removed from the site; still in git history before this change).
+no source.
+
+This preview demo is **Sandbox only** and **noindex** (`meta robots` plus `X-Robots-Tag` on
+`/boot-search` and `/api/boots`). Leave `EBAY_ENV` unset. Affiliate tracking stays off.
 
 | File | What it holds |
 |---|---|
-| `config.js` | **Tool name + subtitle**, and **all affiliate settings**: the on/off switch (off), campaign profiles (real DBS IDs, `<WBW_CAMPID>` placeholder), disclosure text. |
+| `config.js` | **Tool name + subtitle**, affiliate profiles (real DBS IDs, `<WBW_CAMPID>` placeholder) with per-profile disclosure text, My Boots limits. **No on/off switch**: that lives on the server. |
 | `js/data.js` | Option lists (sizes, widths, ~190 makers, colors, regions) and eBay site tables. |
 | `js/url-builder.js` | Pure functions: form state → eBay URL; shareable `?query` links. |
 | `js/app.js` | The page: form, pop-ups, saving settings, opening the search. |
+| `js/results.js` | Live result cards, eBay facet filters, auction mode, paging, My Boots panel, "Run all my searches". |
+| `js/store.js` | My Boots storage (this device only): saved search criteria, ♥ picks / hidden (item IDs, 6 h), viewed + recent searches (30 days). Behind a small backend interface so accounts can be added later. |
+| `js/shopper.js` | Pure helpers: sorting, merge/dedupe of Run-all results, throttled runner, last-visit time. |
+| `../api/boots.js`, `../api/_lib/browse.js` | Server: app token, Browse search, caching, daily cap, trimming. |
 | `bootsearch.css` | Styles (no Tailwind/CDN). |
 | `js/brand.js` | Paints the tool name on the sign, heading and tab title. |
 | `fonts/` | Rye + Sancreek (SIL Open Font License, licenses alongside), for the sign. |
@@ -29,24 +41,103 @@ no source (removed from the site; still in git history before this change).
 
 No build step: edit a file, refresh.
 
-## Turning affiliate links on
-In `config.js` set `affiliate.enabled = true`. Then:
-- EPN params (`mkcid, mkrid, siteid, campid, customid, toolid, mkevt`) are added for the 13 EPN sites.
-- "Sold" searches, non-EPN sites (pl, hk, sg, my, ph), and any placeholder campaign stay clean.
-- The "Ad · Paid links" notice appears above the search button.
-Set `disclosurePageUrl: '/affiliate-disclosure'` once that page exists.
+## Turning affiliate links on (ONE switch, server-side)
+Set the server env vars `EPN_ENABLED=true` and a 10-digit `EPN_CAMPAIGN_ID` (optionally `EPN_PROFILE`,
+default `dbs`). `/api/boots?status=1` then reports `affiliate: true`, and only then does the page:
+- add EPN params (`mkcid, mkrid, siteid, campid, customid, toolid, mkevt`) to search links for the 13 EPN sites,
+  using the named profile's campaign from `config.js` ("Sold" searches, non-EPN sites, placeholder campaigns stay clean);
+- show the profile's "Ad · Paid links" disclosure above the search button and under the results title;
+- show "Paid link" + `rel="sponsored"` on cards whose server-built link is paid.
+Nothing in `config.js` (or a static host with no `/api`) can turn paid links on. `customid` is a
+placement label only. Set `disclosurePageUrl: '/affiliate-disclosure'` once that page exists.
+Before turning it on: EPN's written approval for an API tool, Buy API production access, the site
+listed in the EPN account, and a paid (Pro) Vercel plan.
+
+## My Boots (saved searches and activity, this device only)
+- **Save this search** (one tap, named from the keywords + filters; rename/delete in My Boots).
+- **Run all my searches**: runs every saved search live through `/api/boots` (2 at a time, 250 ms
+  gap, max 12 per press), merges and dedupes by item ID, tags each card with its search(es), sorts on
+  the page (best match, price, ending soonest, newest, most bids). Results are never stored.
+- **New match** badges (on-site only): listings created since that search's last run.
+- **♥ Picks / Hidden**: item IDs only, dropped after 6 hours; shown via a live lookup
+  (`/api/boots?ids=`, max 24 per call). Links are rebuilt every time, never stored.
+- **Viewed** and **Recent searches**: 30 days. **Download my data** and **Clear my data**.
+- No accounts, nothing on a server, no email/SMS/push alerts (those would need EPN's written OK).
+
+## Live results (`/api/boots`)
+Server-side only. Built Oct 2026 with **affiliate tracking OFF**.
+
+### Environment variables (Vercel project settings; never in git or the browser)
+| Var | Default | What |
+|---|---|---|
+| `EBAY_CLIENT_ID` | (none) | App ID of the eBay developer keyset. Without it (or the secret) live results are off and the link builder is used. |
+| `EBAY_CLIENT_SECRET` | (none) | Cert ID of the same keyset. |
+| `EBAY_ENV` | `sandbox` | Sandbox hosts (`api.sandbox.ebay.com`) unless the value is exactly `production`. **This demo leaves it unset** (or `sandbox`) and uses Sandbox keys. `EBAY_ENV=production` is optional later, only after Buy API production access — not for this demo. |
+| `EBAY_DAILY_CAP` | `4000` | Soft cap on Browse calls per Eastern-time day, per server instance. Over it: a recent cached copy (≤ 1 h, auctions ≤ 15 min) or the link builder. |
+| `EPN_ENABLED` | `false` | Affiliate tracking. Only the exact string `true` turns it on, and only together with a 10-digit `EPN_CAMPAIGN_ID`. **Leave unset or `false` for this demo.** |
+| `EPN_CAMPAIGN_ID` | (none) | 10-digit EPN campaign ID. Ignored unless `EPN_ENABLED=true`. |
+| `EPN_REFERENCE_PREFIX` | `dusty-bootfinder` | Sent as `affiliateReferenceId=<prefix>-auction|bin|item` when EPN is on. Placement label only, no personal data. |
+| `CONNECTED_SELLERS` | empty | Comma-separated eBay usernames of sellers with a business connection to this site (case-insensitive). Their cards say "Seller has a business connection to this site". |
+| `CONNECTED_SELLERS_MODE` | `label` | `label` marks their listings; `exclude` drops them from results and saved picks (the response carries `excluded: n`). |
+| `EPN_PROFILE` | `dbs` | Which `config.js` profile (disclosure wording, search-link campaigns) the page uses while tracking is on. |
+
+With tracking **off** (default): no `X-EBAY-C-ENDUSERCTX` header, no EPN parameters, cards link to
+`itemWebUrl` (any EPN params stripped), and the ad disclosure stays hidden. With it **on**:
+the header is sent, cards use `itemAffiliateWebUrl` with `rel="sponsored"`, and the
+"Ad · Paid links" disclosure (`config.js`) appears directly above the cards. Before turning it on,
+EPN's written approval for an API tool is needed (rules review A3/A4).
+
+### How it works
+- **Token:** `client_credentials`, scope `https://api.ebay.com/oauth/api_scope`, kept in memory until
+  5 min before it expires; a 401 refreshes it once and retries.
+- **Search:** `GET /buy/browse/v1/item_summary/search`, header `X-EBAY-C-MARKETPLACE-ID: EBAY_US`.
+  The page sends its normal share query (`?maker=&size=…`) plus `page`, `western=0` and facet picks
+  `r_size, r_width, r_brand, r_material, r_toe, r_heel` (raw eBay values, `|`-separated) and `r_cond`
+  (condition IDs). Men's = 11498, women's = 53557, both = one call each, merged (never 11450).
+- **Western only by default:** `aspect_filter=categoryId:<id>,…,Style:{Western}`; the
+  "Western styles only" box turns it off.
+- **Auction mode:** `buyingOptions:{AUCTION}` + `sort=endingSoonest`, live countdown from
+  `itemEndDate`, "Ending soon" under 1 h. If eBay rejects the auction filter (it needs a leaf
+  category), the page explains and offers the eBay link.
+- **Facets** come from `fieldgroups=ASPECT_REFINEMENTS,MATCHING_ITEMS,CONDITION_REFINEMENTS,BUYING_OPTION_REFINEMENTS`.
+  24 per page, Previous/Next, up to eBay's 10,000-result limit.
+- **Caching:** 5 min for auction / ending-soonest searches, 30 min for everything else, in memory
+  and on Vercel's CDN (`s-maxage` = time left, same `stale-while-revalidate`). If eBay is busy or
+  errors, an older copy is shown for at most 1 h (auctions 15 min), labelled "showing a saved copy
+  from <time>". Nothing older is ever shown. Every result set says "Prices and bids as of 12:52 AM ET". Ended listings are dropped
+  from cached copies.
+- **Item lookup:** `GET /api/boots?ids=v1|…|0,…` (max 24, validated) re-fetches saved items with
+  `GET /buy/browse/v1/item/{id}` (4 at a time, same TTLs). Ended/removed items come back in `gone`.
+- **Errors:** eBay errors, a missing key or the cap give `{ fallback: true, reason }`; the page shows
+  "Open it on eBay" with the link-builder URL. eBay error bodies and secrets are never returned.
+
+### Rules this follows (see knowledge-bots/review-wbw-search-and-daily-deal.md)
+Link out only (no frames), no bidding, auto-bid or sniping, no "eBay" in the tool name,
+"Not affiliated with or endorsed by eBay." under the results, disclosure slot ready above the cards,
+My Boots in `localStorage` only (`dusty_myboots_v1`, criteria and item IDs), no email/SMS alerts.
+
+### Local preview with fake data
+```
+DUSTY_MOCK_EBAY=1 node scripts/dev-server.js 8093      # fake eBay data, never contacts eBay
+```
+Tests: `node --test tests/bootsearch/{browse-api,shopper,store,url-builder}.test.js` (unit, no network);
+browser tests need puppeteer-core + Chrome and the preview servers, see the header of each file
+(`myboots.test.js` covers My Boots / Run all on desktop and mobile).
+The dev server ignores real keys in your shell unless `DUSTY_LIVE_EBAY=1` (real calls; owner's OK only).
 
 ## Shareable / deep links
 `/boot-search?maker=lucchese&gender=womens&size=7,7.5&max=300` opens with those picks.
 Keys: `any, all, exact=1, not, gender (mens|womens|both), size, width, brand|maker, cond, color,
 vintage, handmade, country, unbranded=1, min, max, sale, sort, sold=1, region, view, desc=1,
 ra=1, fs=1, pickup=1, zip, miles, nocat=1`. "Copy link to this search" on the page builds these.
-"Copy link" always gives a `/boot-search?...` link. Old `/eBayBootSearch?...` links redirect with their query kept.
+"Copy link" always gives a `/boot-search?...` link. `/eBayBootSearch?...` links open the same way.
 
 ## Tests
-Tests and the dev server live on the `bootsearch-rebuild` branch (not deployed).
+All eBay responses are mocked; no test contacts eBay.
 ```
-node --test tests/bootsearch/url-builder.test.js            # no browser needed
+node --test tests/bootsearch/url-builder.test.js tests/bootsearch/browse-api.test.js   # no browser needed
+DUSTY_MOCK_EBAY=1 node scripts/dev-server.js 8093 &
+LIVE_URL=http://localhost:8093/boot-search node --test tests/bootsearch/live.test.js     # live cards (mock data)
 node scripts/dev-server.js 8091 &
 NEW_URL=http://localhost:8091/boot-search node --test tests/bootsearch/browser.test.js   # needs puppeteer-core + Chrome
 NEW_URL=http://localhost:8091/boot-search node --test tests/bootsearch/qa.test.js        # full QA pass (every control)
